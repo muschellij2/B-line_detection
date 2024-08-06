@@ -25,7 +25,7 @@ from utils.dataset_utils import create_folder_structure
 
 # define task (either segmentation or classification) 
 # and the number of frames for each item in the dataset
-task = 'segmentation'
+task = 'classification'
 folder = 'frames_1'
 
 # define segmentation-specific parameters
