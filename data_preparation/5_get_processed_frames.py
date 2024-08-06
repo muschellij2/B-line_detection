@@ -91,6 +91,7 @@ if __name__ == '__main__':
     processing_cases = {}
 
     for case in tqdm(cases):
+        print(f'Case is {case}')
         # define output folder for a single case and create it if it does not exist yet
         case_output = os.path.join(output_folder, case)
         if not os.path.exists(case_output):
