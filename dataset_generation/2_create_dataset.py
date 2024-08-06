@@ -67,14 +67,14 @@ annotation_df = pd.read_csv(expert_annotation)
 for split in split_dict.keys():
     
     if split not in skipped_splits:
-
+        
         print(f'Split: {split}')
-
+        
         # get all cases in the current split
         cases = split_dict[split]
-
+        
         # --------------- POSITIVE FRAMES ------------------
-
+        
         # get the paths to all annotated frames and process them
         annotated_frames = []
         for index, row in annotation_df[annotation_df['case'].isin(cases)].iterrows():
@@ -84,67 +84,67 @@ for split in split_dict.keys():
             frame = str(row['frame']).zfill(3)
             # add the path to frame to the list
             annotated_frames.append(os.path.join(input_folder, case, f'BEDLUS_{case[-3:]}_{clip}_{frame}.png'))
-
+        
         # if centered_annotated_frame equals True, loop over all frames in the positively labeled videos
         # and only save those that contain at least one annotated frame
         if centered_annotated_frame == False:
             # define an empty list to store the paths to all negatively labeled frames
             selected_positive_frames = []
-
+            
             # get the frame names for all frames in the positively labeled clips 
             # which are part of the selected cases in the current dataset split
             for case in cases:
                 all_positive_frames = natsorted(get_all_frames(case, input_folder, class_df, 1))
                 selected_positive_frames += [frame for i, frame in enumerate(all_positive_frames) if i % frame_selection_threshold == 0]
             print(f'Copying positive frames for split {split} to the dataset directory...')
-
+            
             # set some inputs of the convert_clip function
             output_directory = os.path.join(output_folder, name_output_subfolder, split, 'pos')
             adjacent_frames = (0, frames-1)
             outside_clip = 'pass'
             create = lambda source: create_datapoint(source, output_directory, output_type, adjacent_frames, frames_dict, outside_clip, annotated_frames) 
-
+            
             # handle clips using multithreading for speedup
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 # copy the negative frames into their new directory
                 executor.map(create, selected_positive_frames)
-
+        
         # else assume that the annotated frame should be in the middle of the segment
         # and in case that the first or last segment frames fall outside of the clip, select the nearest neighboring frame.
         else:        
             print(f'Copying positive frames for split {split} to the dataset directory...')
-
+            
             # set some inputs of the convert_clip function
             output_directory = os.path.join(output_folder, name_output_subfolder, split, 'pos')
             adjacent_frames = (ceil(frames/2)-1, int(frames/2))
             outside_clip = 'nearest_neighbor'           
             create = lambda source: create_datapoint(source, output_directory, output_type, adjacent_frames, frames_dict, outside_clip)            
-
+            
             # handle clips using multithreading for speedup
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 # copy the negative frames into their new directory
                 executor.map(create, annotated_frames)
-
-
+            
+            
         # --------------- NEGATIVE FRAMES ------------------
-
+        
         # define an empty list to store the paths to all negatively labeled frames
         negative_frames = []
-
+        
         # get the frame names for negatively labeled clips 
         # that are part of all cases in the current dataset split
         for case in cases:
             all_frames = natsorted(get_all_frames(case, input_folder, class_df, 0))
             negative_frames += [frame for i, frame in enumerate(all_frames) if i % frame_selection_threshold == 0]
-
+        
         print(f'Copying negative frames for split {split} to the dataset directory...')
-
+        
         # set some inputs of the convert_clip function
         output_directory = os.path.join(output_folder, name_output_subfolder, split, 'neg')
         adjacent_frames = (0, frames-1) if centered_annotated_frame == False else (ceil(frames/2)-1, int(frames/2))
         outside_clip = 'pass' if centered_annotated_frame == False else 'nearest_neighbor'
         create = lambda source: create_datapoint(source, output_directory, output_type, adjacent_frames, frames_dict, outside_clip)
-
+        
         # handle clips using multithreading for speedup
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # copy the negative frames into their new directory
